@@ -9,3 +9,4 @@ edition = "2021"
 serde = "1.0"
 serde_json = "1.0"
 structopt = { version = "0.3", default-features = false }
+postflop-solver = {path= "/home/lzy/gitcode/postflop-solver"}
