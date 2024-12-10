@@ -86,9 +86,11 @@ fn main() {
     let ip_turn_bet_sizes = get_bet_sizes(&data, "ip_turn_bet_sizes");
     let oop_river_bet_sizes = get_bet_sizes(&data, "oop_river_bet_sizes");
     let ip_river_bet_sizes = get_bet_sizes(&data, "ip_river_bet_sizes");
+    let turn_donk_sizes_str = extract_str(&data, &vec!["tree_config", "turn_donk_sizes"]);
     let river_donk_sizes_str = extract_str(&data, &vec!["tree_config", "river_donk_sizes"]);
 
-    let tree_config = TreeConfig {
+
+    let mut tree_config = TreeConfig {
         initial_state: initial_state,
         starting_pot: extract_i32(&data, &vec!["tree_config", "starting_pot"]),
         effective_stack: extract_i32(&data, &vec!["tree_config", "effective_stack"]),
@@ -97,13 +99,18 @@ fn main() {
         flop_bet_sizes: [oop_flop_bet_sizes, ip_flop_bet_sizes],
         turn_bet_sizes: [oop_turn_bet_sizes, ip_turn_bet_sizes],
         river_bet_sizes: [oop_river_bet_sizes, ip_river_bet_sizes],
-        // TODO: donk sizes
         turn_donk_sizes: None,
-        river_donk_sizes: Some(DonkSizeOptions::try_from(river_donk_sizes_str.as_str()).unwrap()),
+        river_donk_sizes: None,
         add_allin_threshold: 1.5,
         force_allin_threshold: 0.15,
         merging_threshold: 0.1,
     };
+    if turn_donk_sizes_str != "" {
+        tree_config.turn_donk_sizes = Some(DonkSizeOptions::try_from(turn_donk_sizes_str.as_str()).unwrap());
+    }
+    if river_donk_sizes_str != "" {
+        tree_config.river_donk_sizes = Some(DonkSizeOptions::try_from(river_donk_sizes_str.as_str()).unwrap());
+    }
 
     let action_tree = ActionTree::new(tree_config).unwrap();
     let mut game = PostFlopGame::with_config(card_config, action_tree).unwrap();
@@ -113,7 +120,7 @@ fn main() {
     let exploitability = solve(&mut game, max_num_iterations, target_exploitability, true);
     println!("Exploitability: {:.2}", exploitability);
 
-    // save_data_to_file(&game, "memo string", opt.output.clone(), None).unwrap();
+    save_data_to_file(&game, "memo string", opt.output.clone(), None).unwrap();
 
     // let (mut game2, _memo_string): (PostFlopGame, _) =
     //     load_data_from_file(opt.output.into_os_string().into_string().unwrap(), None).unwrap();
