@@ -43,5 +43,6 @@
   },
   "target_exploitability": 0.03,
   "max_num_iterations": 1000,
-  "compress_level": 4
+  "compress_level": 4,
+  "storage_mode": ""
 }

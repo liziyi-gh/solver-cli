@@ -140,6 +140,10 @@ fn main() {
     println!("Exploitability: {:.2}", exploitability);
 
     let compress_level = extract_i32(&data, &vec!["compress_level"]);
+    let storage_mode = extract_str(&data, &vec!["storage_mode"]);
+    if storage_mode == "turn" {
+        let _ = game.set_target_storage_mode(BoardState::Turn);
+    }
 
     save_data_to_file(
         &game,
