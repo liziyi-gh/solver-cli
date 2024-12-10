@@ -2,6 +2,7 @@ use postflop_solver::*;
 use serde_json::Value;
 use std::path::PathBuf;
 use structopt::StructOpt;
+use sysinfo::System;
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "example", about = "An example of StructOpt usage.")]
@@ -89,9 +90,8 @@ fn main() {
     let turn_donk_sizes_str = extract_str(&data, &vec!["tree_config", "turn_donk_sizes"]);
     let river_donk_sizes_str = extract_str(&data, &vec!["tree_config", "river_donk_sizes"]);
 
-
     let mut tree_config = TreeConfig {
-        initial_state: initial_state,
+        initial_state,
         starting_pot: extract_i32(&data, &vec!["tree_config", "starting_pot"]),
         effective_stack: extract_i32(&data, &vec!["tree_config", "effective_stack"]),
         rake_rate: extract_float(&data, &vec!["tree_config", "rake_rate"]),
@@ -106,26 +106,46 @@ fn main() {
         merging_threshold: 0.1,
     };
     if turn_donk_sizes_str != "" {
-        tree_config.turn_donk_sizes = Some(DonkSizeOptions::try_from(turn_donk_sizes_str.as_str()).unwrap());
+        tree_config.turn_donk_sizes =
+            Some(DonkSizeOptions::try_from(turn_donk_sizes_str.as_str()).unwrap());
     }
     if river_donk_sizes_str != "" {
-        tree_config.river_donk_sizes = Some(DonkSizeOptions::try_from(river_donk_sizes_str.as_str()).unwrap());
+        tree_config.river_donk_sizes =
+            Some(DonkSizeOptions::try_from(river_donk_sizes_str.as_str()).unwrap());
     }
-
     let action_tree = ActionTree::new(tree_config).unwrap();
     let mut game = PostFlopGame::with_config(card_config, action_tree).unwrap();
+    let (mut mem_usage, _) = game.memory_usage();
+    mem_usage = mem_usage / (8 * 1024 * 1024);
+    let mut system = System::new_all();
+    system.refresh_memory();
+    let available_memory = system.available_memory() / (8 * 1024 * 1024);
+
+    if mem_usage > available_memory {
+        println!(
+            "out of memory, need {:.2} MB, available {:.2} MB",
+            mem_usage, available_memory
+        );
+        return;
+    }
+    println!("Memory usage: {:.2} MB", mem_usage);
+
     game.allocate_memory(false);
-    let max_num_iterations = 1000;
-    let target_exploitability = game.tree_config().starting_pot as f32 * 0.005; // 0.5% of the pot
+    // game initialize finished here
+
+    let max_num_iterations = extract_i32(&data, &vec!["max_num_iterations"]) as u32;
+    let target_exploitability = (game.tree_config().starting_pot as f32)
+        * (extract_float(&data, &vec!["target_exploitability"]) as f32);
     let exploitability = solve(&mut game, max_num_iterations, target_exploitability, true);
     println!("Exploitability: {:.2}", exploitability);
 
-    save_data_to_file(&game, "memo string", opt.output.clone(), None).unwrap();
+    let compress_level = extract_i32(&data, &vec!["compress_level"]);
 
-    // let (mut game2, _memo_string): (PostFlopGame, _) =
-    //     load_data_from_file(opt.output.into_os_string().into_string().unwrap(), None).unwrap();
-    // println!(
-    //     "Memory usage of the original game tree: {:.2}MB", // 11.50MB
-    //     game.target_memory_usage() as f64 / (1024.0 * 1024.0)
-    // );
+    save_data_to_file(
+        &game,
+        "memo string",
+        opt.output.clone(),
+        Some(compress_level),
+    )
+    .unwrap();
 }

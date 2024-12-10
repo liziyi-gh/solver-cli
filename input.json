@@ -3,12 +3,12 @@
   "ip_range": "QQ-22,AQs-A2s,ATo+,K5s+,KJo+,Q8s+,J8s+,T7s+,96s+,86s+,75s+,64s+,53s+",
   "public_card": {
     "flop": "Td9d6h",
-    "turn": "",
+    "turn": "Qc",
     "river": ""
   },
   "tree_config": {
-    "starting_pot": 55,
-    "effective_stack": 955,
+    "starting_pot": 200,
+    "effective_stack": 900,
     "rake_rate": 0.0,
     "rake_cap": 0.0,
     "oop_flop_bet_sizes": {
@@ -40,5 +40,8 @@
     "add_allin_threshold": 1.5,
     "force_allin_threshold": 0.15,
     "merging_threshold": 0.1
-  }
+  },
+  "target_exploitability": 0.03,
+  "max_num_iterations": 1000,
+  "compress_level": 4
 }
